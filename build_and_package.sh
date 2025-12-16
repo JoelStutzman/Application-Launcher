@@ -14,10 +14,10 @@ if [ $? -ne 0 ]; then
 fi
 
 echo ""
-echo "Step 2: Creating DMG installer..."
-./create_dmg.sh
+echo "Step 2: Creating PKG installer (one-click install)..."
+./create_pkg.sh
 if [ $? -ne 0 ]; then
-    echo "❌ DMG creation failed!"
+    echo "❌ PKG creation failed!"
     exit 1
 fi
 
@@ -26,9 +26,11 @@ echo "✅ Complete! Ready for distribution."
 echo ""
 echo "📦 Files created:"
 echo "   - dist/Application Launcher.app"
-echo "   - Application-Launcher-Installer.dmg"
+echo "   - Application-Launcher-Installer.pkg"
 echo ""
 echo "🎯 Next steps:"
 echo "   - Test locally: open 'dist/Application Launcher.app'"
-echo "   - Install: ./install_app.sh"
-echo "   - Distribute: Share Application-Launcher-Installer.dmg"
+echo "   - Test installer: open Application-Launcher-Installer.pkg"
+echo "   - Distribute: Share Application-Launcher-Installer.pkg"
+echo ""
+echo "💡 One-click installation - no drag-and-drop required!"
