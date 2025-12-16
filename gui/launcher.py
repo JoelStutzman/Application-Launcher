@@ -2,7 +2,7 @@
 GUI Application Launcher class.
 """
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from backend import programs
 
 
@@ -12,14 +12,29 @@ class ApplicationLauncher:
     def __init__(self, root):
         self.root = root
         self.root.title("Application Launcher")
-        self.root.geometry("700x800")
         self.root.configure(bg='#2b2b2b')
         
-        # Make window resizable
-        self.root.resizable(True, True)
+        # Get screen dimensions
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # Make window borderless (no minimize, maximize, or close buttons)
+        self.root.overrideredirect(True)
+        
+        # Set geometry to full screen size
+        self.root.geometry(f"{screen_width}x{screen_height}+0+0")
+        
+        # Make window fullscreen
+        self.root.attributes('-fullscreen', True)
+        
+        # Make window non-resizable
+        self.root.resizable(False, False)
         
         # Get available programs
         self.program_dict = programs.PROGRAMS
+        
+        # Admin password (you can change this)
+        self.admin_password = "admin123"
         
         # Count available apps
         self.total_apps = len(self.program_dict)
@@ -28,8 +43,7 @@ class ApplicationLauncher:
         # Store all button frames for filtering
         self.app_buttons = {}
         
-        # Setup keyboard shortcuts
-        self.root.bind('<Escape>', lambda e: self.exit_app())
+        # Setup keyboard shortcuts (removed Escape to prevent accidental exit)
         self.root.bind('<Control-f>', lambda e: self.search_entry.focus())
         self.root.bind('<Command-f>', lambda e: self.search_entry.focus())
         
@@ -116,6 +130,7 @@ class ApplicationLauncher:
         status_frame = tk.Frame(self.root, bg='#1e1e1e')
         status_frame.pack(fill=tk.X, padx=0, pady=(0, 5))
         
+        # Left side - status label
         self.status_label = tk.Label(
             status_frame,
             text=f"📊 {self.available_apps} of {self.total_apps} apps available",
@@ -124,7 +139,24 @@ class ApplicationLauncher:
             fg='#888888',
             pady=5
         )
-        self.status_label.pack()
+        self.status_label.pack(side=tk.LEFT, padx=20)
+        
+        # Right side - Admin Quit button
+        admin_quit_btn = tk.Button(
+            status_frame,
+            text="🔒 Admin Quit",
+            font=('Helvetica', 10, 'bold'),
+            bg='#8B0000',
+            fg='#ffffff',
+            activebackground='#A52A2A',
+            activeforeground='#ffffff',
+            relief=tk.FLAT,
+            cursor='hand2',
+            command=self.admin_quit,
+            padx=15,
+            pady=5
+        )
+        admin_quit_btn.pack(side=tk.RIGHT, padx=20)
         
         # Now setup the search trace after status_label exists
         self.search_var.trace('w', self.filter_apps)
@@ -168,6 +200,10 @@ class ApplicationLauncher:
             search_key = app_name.split(' ', 1)[1].lower() if ' ' in app_name else app_name.lower()
             self.app_buttons[search_key] = btn_frame
         
+        # Force update of the scrollable region
+        self.root.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        
         # Bottom Frame for Exit button
         bottom_frame = tk.Frame(self.root, bg='#2b2b2b', height=100)
         bottom_frame.pack(fill=tk.X, padx=20, pady=(10, 20))
@@ -176,32 +212,12 @@ class ApplicationLauncher:
         # Keyboard shortcuts hint
         shortcuts_label = tk.Label(
             bottom_frame,
-            text="Shortcuts: Ctrl/⌘+F (Search) • Esc (Exit)",
+            text="Shortcuts: Ctrl/⌘+F (Search) • Use Admin Quit button to exit",
             font=('Helvetica', 9),
             bg='#2b2b2b',
             fg='#888888'
         )
-        shortcuts_label.pack(pady=(0, 10))
-        
-        exit_btn = tk.Button(
-            bottom_frame,
-            text="Exit",
-            font=('Helvetica', 12, 'bold'),
-            bg='#d13438',
-            fg='white',
-            activebackground='#a02d30',
-            activeforeground='white',
-            relief=tk.FLAT,
-            cursor='hand2',
-            padx=20,
-            pady=10,
-            command=self.exit_app
-        )
-        exit_btn.pack(fill=tk.X)
-        
-        # Hover effect for exit button
-        exit_btn.bind('<Enter>', lambda e: exit_btn.config(bg='#a02d30'))
-        exit_btn.bind('<Leave>', lambda e: exit_btn.config(bg='#d13438'))
+        shortcuts_label.pack(pady=20)
     
     def create_custom_button(self, parent, app_name, app_func, is_available=True):
         """Create a custom styled button using Canvas for better color control"""
@@ -290,10 +306,27 @@ class ApplicationLauncher:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to launch {app_name}:\n{str(e)}")
     
-    def exit_app(self):
-        """Exit the application"""
-        if messagebox.askokcancel("Exit", "Are you sure you want to exit?"):
-            self.root.destroy()
+    def admin_quit(self):
+        """Exit the application with admin password"""
+        password = simpledialog.askstring(
+            "Admin Authentication",
+            "Enter admin password to quit:",
+            show='*',
+            parent=self.root
+        )
+        
+        if password is None:
+            # User cancelled
+            return
+        
+        if password == self.admin_password:
+            if messagebox.askokcancel("Quit", "Are you sure you want to quit the application?"):
+                self.root.destroy()
+        else:
+            messagebox.showerror(
+                "Access Denied",
+                "Incorrect password. Access denied."
+            )
     
     def on_search_focus_in(self, event):
         """Handle search entry focus in"""
